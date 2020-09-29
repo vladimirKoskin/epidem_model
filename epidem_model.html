@@ -1,0 +1,556 @@
+<!doctype = html>
+
+<html>
+
+    <head>
+        <meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>GROS TEST DE BABTOU</title>
+        <meta name="description" content="A cool generator of Math exercises to post on a website when finished enough.">
+        <link rel="stylesheet" href="epidem_model.css">
+        <script src = "https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"> </script>
+    </head>
+    <body>
+ 
+        <div class="modelBox" height="400" width="400">
+            <canvas id="myChart" height="400" width="400"></canvas>
+            <span>
+                <div class="paramTextBox">
+                    SI
+                </div>
+                <div class="paramTextBox" id="display_SI_si">
+                    
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SI_si">
+                </div>
+            </span>
+            <span>
+                <div class="paramTextBox">
+                    IS
+                </div>
+                <div class="paramTextBox" id="display_SI_is">
+                    
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SI_is">
+                </div>
+            </span>                      
+        </div>
+        
+        
+        <div class="modelBox" height="400" width="400">
+            <canvas id="myChart_SIR" height="400" width="400"></canvas>
+            <span>
+                <div class="paramTextBox">
+                    SI
+                </div>
+                <div class="paramTextBox" id="display_SIR_si">
+                    
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SIR_si">
+                </div>
+            </span>
+            <span>
+                <div class="paramTextBox">
+                    IR
+                </div>
+                <div class="paramTextBox" id="display_SIR_ir">
+                    
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SIR_ir">
+                </div>
+            </span>                      
+        </div>             
+
+        
+        <div class="modelBox" height="400" width="400">
+            <canvas id="myChart_SIRD" height="400" width="400"></canvas>
+            <span>
+                <div class="paramTextBox" id="useMe">
+                    SI
+                </div>
+                <div class="paramTextBox" id="display_SIRD_si">
+                    5
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SIRD_si">
+                </div>
+            </span>
+            <span>
+                <div class="paramTextBox">
+                    IR
+                </div>
+                <div class="paramTextBox" id="display_SIRD_ir">
+                    5
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SIRD_ir">
+                </div>
+            </span>      
+            <span>
+                <div class="paramTextBox">
+                    ID
+                </div>
+                <div class="paramTextBox" id="display_SIRD_id">
+                    5
+                </div>
+                <div class="paramSliderBox">
+                    <input type="range" min="0" max="20" value="0" class="slider" id="slider_SIRD_id">
+                </div>
+            </span>
+        </div>
+
+<!--  SI -->
+        <script>
+            
+            var SI_gradient_s;
+            var SI_gradient_i;
+            var SI_param_si = 20;
+            var SI_param_is = 8;
+
+            var SI_p_now = new Array(2);
+            var SI_tmp_p_now = new Array(2);
+            
+            let SI_p_init = [0.99,0.01];
+            var SI_n_steps = 200;
+            var SI_maxTime = 2;
+            var SI_lagtime_sim = SI_maxTime/SI_n_steps;
+            
+            
+            var slider_SI_param_si = document.getElementById("slider_SI_si");
+            var slider_SI_param_is = document.getElementById("slider_SI_is");
+
+            var display_SI_param_si = document.getElementById("display_SI_si");
+            var display_SI_param_is = document.getElementById("display_SI_is");
+
+            slider_SI_param_si.value = SI_param_si;
+            display_SI_param_si.innerHTML = slider_SI_param_si.value; // Display the default slider value
+
+            slider_SI_param_is.value = SI_param_is;
+            display_SI_param_is.innerHTML = slider_SI_param_is.value; // Display the default slider value
+            
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SI_param_si.oninput = function() {
+              display_SI_param_si.innerHTML = this.value;
+              SI_param_si = this.value;
+              computeUpdate_SI();
+            } 
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SI_param_is.oninput = function() {
+              display_SI_param_is.innerHTML = this.value;
+              SI_param_is = this.value;
+              computeUpdate_SI();
+                
+            } 
+            
+            
+            
+            var SI_record_time = new Array(SI_n_steps +1);
+            var SI_record_p = new Array(2);
+            for (var i = 0; i < SI_record_p.length; i++) {
+                    SI_record_p[i] = new Array(SI_n_steps +1)
+            }          
+            SI_record_p[0][0] = SI_p_init[0];
+            SI_record_p[1][0] = SI_p_init[1];
+            SI_record_time[0] = 0;           
+            
+            function computeUpdate_SI() {
+                SI_p_now = SI_p_init;
+
+                for (var step_id = 0; step_id < SI_n_steps ; step_id++) {
+
+                    SI_gradient_s = -SI_param_si*SI_p_now[0]*SI_p_now[1] + SI_p_now[1]*SI_param_is;
+                    SI_gradient_i = SI_param_si*SI_p_now[0]*SI_p_now[1] - SI_p_now[1]*SI_param_is;
+                    //document.getElementById("textExercise").textContent = p_now[0];
+
+                    SI_tmp_p_now[0] = SI_p_now[0]+ SI_lagtime_sim*SI_gradient_s;
+                    SI_tmp_p_now[1] = SI_p_now[1]+ SI_lagtime_sim*SI_gradient_i;
+
+
+                    SI_p_now = SI_tmp_p_now;
+                    SI_record_p[0][1+step_id] = SI_p_now[0];
+                    SI_record_p[1][1+step_id] = SI_p_now[1]; 
+                    SI_record_time[1+step_id] = (1+step_id)*SI_lagtime_sim;
+                }
+                
+                update_graph_SI();
+            }
+
+            var ctx = document.getElementById('myChart').getContext('2d');
+            
+            var chart = new Chart(ctx, {
+                // The type of chart we want to create
+                type: 'line',
+
+                // The data for our dataset
+                data: {
+                    // labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    labels:SI_record_time,
+                    datasets: [{
+                        label: 'Proportion of S',
+                        backgroundColor: 'rgb(3, 100, 255)',
+                        borderColor: 'rgb(3, 100, 255)',
+                        //data: [0, 10, 5, 2, 20, 30, 45],
+                        data: SI_record_p[0],
+                        fill: false,
+                    },{
+                        label: 'Proportion of I',
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        //data: [0, 10, 5, 2, 20, 30, 45],
+                        data: SI_record_p[1],
+                        fill: false,
+                    }]
+                
+                },
+
+                // Configuration options go here
+                options: {
+                  responsive: false,
+                  maintainAspectRatio: false,
+                }
+            });
+            
+            function update_graph_SI() {
+                chart.data.datasets[0].data = SI_record_p[0];
+                chart.data.datasets[1].data = SI_record_p[1];
+                chart.update();
+            }
+          computeUpdate_SI();
+
+
+          </script>
+        
+        
+        
+        
+        
+        
+        
+<!--  SIR -->
+        <script> 
+            
+            var SIR_gradient_s;
+            var SIR_gradient_i;
+            var SIR_gradient_r;
+
+            var SIR_param_si = 20;
+            var SIR_param_ir = 8;
+
+            var SIR_p_now = new Array(3);
+            var SIR_tmp_p_now = new Array(3);
+            
+            let SIR_p_init = [0.99,0.01,0];
+            var SIR_n_steps = 200;
+            var SIR_maxTime = 2;
+            var SIR_lagtime_sim = SIR_maxTime/SIR_n_steps;
+            
+            
+            var slider_SIR_param_si = document.getElementById("slider_SIR_si");
+            var slider_SIR_param_ir = document.getElementById("slider_SIR_ir");
+
+            var display_SIR_param_si = document.getElementById("display_SIR_si");
+            var display_SIR_param_ir = document.getElementById("display_SIR_ir");
+
+            slider_SIR_param_si.value = SIR_param_si;
+            display_SIR_param_si.innerHTML = slider_SIR_param_si.value; // Display the default slider value
+
+            slider_SIR_param_ir.value = SIR_param_ir;
+            display_SIR_param_ir.innerHTML = slider_SIR_param_ir.value; // Display the default slider value
+            
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SIR_param_si.oninput = function() {
+              display_SIR_param_si.innerHTML = this.value;
+              SIR_param_si = this.value;
+              computeUpdate_SIR();
+            } 
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SIR_param_ir.oninput = function() {
+              display_SIR_param_ir.innerHTML = this.value;
+              SIR_param_ir = this.value;
+              computeUpdate_SIR();
+                
+            } 
+            
+            
+            
+            var SIR_record_time = new Array(SIR_n_steps +1);
+            var SIR_record_p = new Array(3);
+            for (var i = 0; i < SIR_record_p.length; i++) {
+                    SIR_record_p[i] = new Array(SIR_n_steps +1)
+            }          
+            SIR_record_p[0][0] = SIR_p_init[0];
+            SIR_record_p[1][0] = SIR_p_init[1];
+            SIR_record_p[2][0] = SIR_p_init[2];
+
+            SIR_record_time[0] = 0;           
+            
+            function computeUpdate_SIR() {
+                SIR_p_now = SIR_p_init;
+
+                for (var step_id = 0; step_id < SIR_n_steps ; step_id++) {
+
+                    SIR_gradient_s = -SIR_param_si*SIR_p_now[0]*SIR_p_now[1] 
+                    SIR_gradient_i = SIR_param_si*SIR_p_now[0]*SIR_p_now[1] - SIR_p_now[1]*SIR_param_ir;
+                    SIR_gradient_r = SIR_param_ir*SIR_p_now[1] 
+                    //document.getElementById("textExercise").textContent = p_now[0];
+
+                    SIR_tmp_p_now[0] = SIR_p_now[0]+ SIR_lagtime_sim*SIR_gradient_s;
+                    SIR_tmp_p_now[1] = SIR_p_now[1]+ SIR_lagtime_sim*SIR_gradient_i;
+                    SIR_tmp_p_now[2] = SIR_p_now[2]+ SIR_lagtime_sim*SIR_gradient_r;
+
+                    SIR_p_now = SIR_tmp_p_now;
+                    SIR_record_p[0][1+step_id] = SIR_p_now[0];
+                    SIR_record_p[1][1+step_id] = SIR_p_now[1]; 
+                    SIR_record_p[2][1+step_id] = SIR_p_now[2]; 
+
+                    SIR_record_time[1+step_id] = (1+step_id)*SIR_lagtime_sim;
+                }
+                
+                update_graph_SIR();
+            }
+
+            var ctx = document.getElementById('myChart_SIR').getContext('2d');
+            var chart_SIR = new Chart(ctx, {
+                // The type of chart we want to create
+                type: 'line',
+
+                // The data for our dataset
+                data: {
+                    // labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    labels:SIR_record_time,
+                    datasets: [{
+                        label: 'Proportion of S',
+                        backgroundColor: 'rgb(3, 100, 255)',
+                        borderColor: 'rgb(3, 100, 255)',
+                        //data: [0, 10, 5, 2, 20, 30, 45],
+                        data: SIR_record_p[0],
+                        fill: false,
+                    },{
+                        label: 'Proportion of I',
+                        backgroundColor: 'rgb(255, 100, 132)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        //data: [0, 10, 5, 2, 20, 30, 45],
+                        data: SIR_record_p[1],
+                        fill: false,
+                    },{
+                        label: 'Proportion of R',
+                        backgroundColor: 'rgb(50, 160, 80)',
+                        borderColor: 'rgb(50, 160, 80)',
+                        //data: [0, 10, 5, 2, 20, 30, 45],
+                        data: SIR_record_p[2],
+                        fill: false,
+                    }]
+                
+                },
+
+                // Configuration options go here
+                options: {
+                  responsive: false,
+                  maintainAspectRatio: false,
+                }
+            });
+            
+            function update_graph_SIR() {
+                chart_SIR.data.datasets[0].data = SIR_record_p[0];
+                chart_SIR.data.datasets[1].data = SIR_record_p[1];
+                chart_SIR.data.datasets[2].data = SIR_record_p[2];
+
+                chart_SIR.update();
+            }
+          computeUpdate_SIR();
+
+
+          </script>
+               
+
+        
+<!--  SIRD -->
+        <script> 
+            var chart_SIRD;
+
+            var SIRD_gradient_s;
+            var SIRD_gradient_i;
+            var SIRD_gradient_r;
+            var SIRD_gradient_d;
+
+            var SIRD_param_si = 20.0;
+            var SIRD_param_ir = 5.0;
+            var SIRD_param_id = 1.0;
+
+            var SIRD_p_now = new Array(4);
+            var SIRD_tmp_p_now = new Array(4);
+            
+            let SIRD_p_init = [0.99,0.01,0.0 , 0.0];
+            var SIRD_n_steps = 200;
+            var SIRD_maxTime = 2;
+            var SIRD_lagtime_sim = SIRD_maxTime/SIRD_n_steps;
+            
+            var SIRD_record_time = new Array(SIRD_n_steps +1);
+            var SIRD_record_p = new Array(4);
+            for (var i = 0; i < SIRD_record_p.length; i++) {
+                    SIRD_record_p[i] = new Array(SIRD_n_steps +1);
+            }          
+            SIRD_record_p[0][0] = SIRD_p_init[0];
+            SIRD_record_p[1][0] = SIRD_p_init[1];
+            SIRD_record_p[2][0] = SIRD_p_init[2];
+            SIRD_record_p[3][0] = SIRD_p_init[3];
+
+            SIRD_record_time[0] = 0;   
+            
+            var slider_SIRD_param_si = document.getElementById("slider_SIRD_si");
+            var slider_SIRD_param_ir = document.getElementById("slider_SIRD_ir");
+            var slider_SIRD_param_id = document.getElementById("slider_SIRD_id");
+
+            var display_SIRD_param_si = document.getElementById("display_SIRD_si");
+            var display_SIRD_param_ir = document.getElementById("display_SIRD_ir");
+            var display_SIRD_param_id = document.getElementById("display_SIRD_id");
+
+            slider_SIRD_param_id.step = "0.25"; 
+            
+            slider_SIRD_param_si.value = SIRD_param_si;
+            display_SIRD_param_si.innerHTML = slider_SIRD_param_si.value; // Display the default slider value
+
+            slider_SIRD_param_ir.value = SIRD_param_ir;
+            display_SIRD_param_ir.innerHTML = slider_SIRD_param_ir.value; // Display the default slider value
+            
+            slider_SIRD_param_id.value = SIRD_param_id;
+            display_SIRD_param_id.innerHTML = slider_SIRD_param_id.value; // Display the default slider value
+            
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SIRD_param_si.oninput = function() {
+              SIRD_param_si = this.value;
+              display_SIRD_param_si.innerHTML = SIRD_param_si;
+              computeUpdate_SIRD();
+            } 
+            
+            // Update the current slider value (each time you drag the slider handle)
+            slider_SIRD_param_ir.oninput = function() {
+              SIRD_param_ir = this.value;
+              display_SIRD_param_ir.innerHTML = SIRD_param_ir;
+              computeUpdate_SIRD();
+            } 
+            
+            slider_SIRD_param_id.oninput = function() {
+              SIRD_param_id = this.value;
+              display_SIRD_param_id.innerHTML = SIRD_param_id;
+              computeUpdate_SIRD();
+                
+            }            
+            
+        
+            
+            function computeUpdate_SIRD() {
+                
+             
+
+                
+                
+
+                for (var step_id = 0; step_id < SIRD_n_steps ; step_id++) {
+
+                    SIRD_gradient_s = -SIRD_param_si*SIRD_record_p[0][step_id]*SIRD_record_p[1][step_id] ;
+                    
+                    //SIRD_gradient_i = (SIRD_param_si*SIRD_record_p[0][step_id]*SIRD_record_p[1][step_id]) - (SIRD_record_p[1][step_id]*(SIRD_param_ir+SIRD_param_id));
+                    // The one above do NOT WORK (Why? Only Satan knows, as the creator of Javascript)
+                    SIRD_gradient_i = ( SIRD_param_si * SIRD_record_p[0][step_id] * SIRD_record_p[1][step_id] ) - ( SIRD_record_p[1][step_id] * SIRD_param_ir ) - ( SIRD_record_p[1][step_id] * SIRD_param_id );
+
+                    SIRD_gradient_r = SIRD_param_ir * SIRD_record_p[1][step_id] ;
+                    SIRD_gradient_d = SIRD_param_id * SIRD_record_p[1][step_id];
+
+                    //document.getElementById("textExercise").textContent = p_now[0];
+                                        
+                    SIRD_record_p[0][1+step_id] = SIRD_record_p[0][step_id] + SIRD_lagtime_sim*SIRD_gradient_s;
+                    SIRD_record_p[1][1+step_id] = SIRD_record_p[1][step_id] + SIRD_lagtime_sim*SIRD_gradient_i;
+                    SIRD_record_p[2][1+step_id] = SIRD_record_p[2][step_id] + SIRD_lagtime_sim*SIRD_gradient_r;
+                    SIRD_record_p[3][1+step_id] = SIRD_record_p[3][step_id] + SIRD_lagtime_sim*SIRD_gradient_d;
+
+                    SIRD_record_time[1+step_id] = (1+step_id)*SIRD_lagtime_sim;
+                }
+                
+                
+
+                
+                //update_graph_SIRD();
+                chart_SIRD.data.datasets[0].data = SIRD_record_p[0];
+                chart_SIRD.data.datasets[1].data = SIRD_record_p[1];
+                chart_SIRD.data.datasets[2].data = SIRD_record_p[2];
+                chart_SIRD.data.datasets[3].data = SIRD_record_p[3];
+
+                chart_SIRD.update();
+            }
+
+            var ctx = document.getElementById('myChart_SIRD').getContext('2d');
+            
+            new_graph_SIRD()
+            function new_graph_SIRD() {
+                chart_SIRD = new Chart(ctx, {
+                    // The type of chart we want to create
+                    type: 'line',
+
+                    // The data for our dataset
+                    data: {
+                        // labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                        labels:SIRD_record_time,
+                        datasets: [{
+                            label: 'Proportion of S',
+                            backgroundColor: 'rgb(3, 100, 255)',
+                            borderColor: 'rgb(3, 100, 255)',
+                            //data: [0, 10, 5, 2, 20, 30, 45],
+                            data: SIRD_record_p[0],
+                            fill: false,
+                        },{
+                            label: 'Proportion of I',
+                            backgroundColor: 'rgb(255, 100, 132)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            //data: [0, 10, 5, 2, 20, 30, 45],
+                            data: SIRD_record_p[1],
+                            fill: false,
+                        },{
+                            label: 'Proportion of R',
+                            backgroundColor: 'rgb(50, 160, 80)',
+                            borderColor: 'rgb(50, 160, 80)',
+                            //data: [0, 10, 5, 2, 20, 30, 45],
+                            data: SIRD_record_p[2],
+                            fill: false,
+                        },{
+                            label: 'Proportion of D',
+                            backgroundColor: 'rgb(0, 0, 0)',
+                            borderColor: 'rgb(0, 0, 0)',
+                            //data: [0, 10, 5, 2, 20, 30, 45],
+                            data: SIRD_record_p[3],
+                            fill: false,
+                        }]
+
+                    },
+
+                    // Configuration options go here
+                    options: {
+                      responsive: false,
+                      maintainAspectRatio: false,
+                    }
+                });
+            }
+            //function update_graph_SIRD() {
+                //chart_SIRD.data.datasets[0].data = SIRD_record_p[0];
+                //chart_SIRD.data.datasets[1].data = SIRD_record_p[1];
+                //chart_SIRD.data.datasets[2].data = SIRD_record_p[2];
+                //chart_SIRD.data.datasets[3].data = SIRD_record_p[3];
+
+                //chart_SIRD.update();
+            //}
+          computeUpdate_SIRD();
+
+
+          </script>
+        
+    </body>
+
+</html>
